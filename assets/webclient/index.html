@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Vox Bridge</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=DM+Mono:wght@300;400&display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            *,
+            *::before,
+            *::after {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            :root {
+                --bg: #0e0e0e;
+                --surface: #161616;
+                --border: #2a2a2a;
+                --text: #e8e2d9;
+                --muted: #5a5550;
+                --accent: #c8a97e;
+                --danger: #a05a5a;
+                --green: #6a9e7a;
+            }
+
+            body {
+                background: var(--bg);
+                color: var(--text);
+                font-family: "DM Mono", monospace;
+                min-height: 100dvh;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 0;
+                overflow: hidden;
+            }
+
+            /* ── Grain overlay ── */
+            body::before {
+                content: "";
+                position: fixed;
+                inset: 0;
+                background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+                pointer-events: none;
+                z-index: 100;
+            }
+
+            /* ── Layout ── */
+            .card {
+                width: min(420px, 92vw);
+                background: var(--surface);
+                border: 1px solid var(--border);
+                padding: 52px 48px 48px;
+                display: flex;
+                flex-direction: column;
+                gap: 40px;
+                position: relative;
+            }
+
+            /* ── Header ── */
+            .header {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            .logo {
+                font-family: "Cormorant Garamond", serif;
+                font-size: 32px;
+                font-weight: 300;
+                letter-spacing: 0.12em;
+                color: var(--text);
+            }
+
+            .logo span {
+                color: var(--accent);
+            }
+
+            .tagline {
+                font-size: 10px;
+                letter-spacing: 0.2em;
+                color: var(--muted);
+                text-transform: uppercase;
+            }
+
+            /* ── Status pill ── */
+            .status {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 11px;
+                letter-spacing: 0.1em;
+                color: var(--muted);
+            }
+
+            .dot {
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background: var(--muted);
+                transition:
+                    background 0.4s,
+                    box-shadow 0.4s;
+            }
+
+            .dot.live {
+                background: var(--green);
+                box-shadow: 0 0 8px var(--green);
+                animation: pulse 2s ease-in-out infinite;
+            }
+
+            .dot.error {
+                background: var(--danger);
+            }
+
+            @keyframes pulse {
+                0%,
+                100% {
+                    opacity: 1;
+                }
+                50% {
+                    opacity: 0.4;
+                }
+            }
+
+            /* ── Volume ── */
+            .volume-section {
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.4s;
+            }
+
+            .volume-section.visible {
+                opacity: 1;
+                pointer-events: all;
+            }
+
+            .volume-label {
+                display: flex;
+                justify-content: space-between;
+                font-size: 10px;
+                letter-spacing: 0.15em;
+                color: var(--muted);
+                text-transform: uppercase;
+            }
+
+            .volume-label span:last-child {
+                color: var(--accent);
+                font-variant-numeric: tabular-nums;
+            }
+
+            input[type="range"] {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 100%;
+                height: 2px;
+                background: var(--border);
+                outline: none;
+                cursor: pointer;
+            }
+
+            input[type="range"]::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 14px;
+                height: 14px;
+                border-radius: 50%;
+                background: var(--accent);
+                cursor: pointer;
+                transition:
+                    transform 0.15s,
+                    box-shadow 0.15s;
+            }
+
+            input[type="range"]::-webkit-slider-thumb:hover {
+                transform: scale(1.3);
+                box-shadow: 0 0 10px rgba(200, 169, 126, 0.4);
+            }
+
+            input[type="range"]::-moz-range-thumb {
+                width: 14px;
+                height: 14px;
+                border: none;
+                border-radius: 50%;
+                background: var(--accent);
+                cursor: pointer;
+            }
+
+            /* ── Buttons ── */
+            .actions {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            button {
+                width: 100%;
+                padding: 14px;
+                border: 1px solid var(--border);
+                background: transparent;
+                color: var(--text);
+                font-family: "DM Mono", monospace;
+                font-size: 11px;
+                letter-spacing: 0.2em;
+                text-transform: uppercase;
+                cursor: pointer;
+                transition:
+                    border-color 0.2s,
+                    color 0.2s,
+                    background 0.2s;
+            }
+
+            button.primary {
+                border-color: var(--accent);
+                color: var(--accent);
+            }
+
+            button.primary:hover {
+                background: rgba(200, 169, 126, 0.08);
+            }
+
+            button.disconnect {
+                border-color: var(--danger);
+                color: var(--danger);
+                display: none;
+            }
+
+            button.disconnect:hover {
+                background: rgba(160, 90, 90, 0.08);
+            }
+
+            button:disabled {
+                opacity: 0.3;
+                cursor: not-allowed;
+            }
+
+            /* ── Footer ── */
+            .footer {
+                position: absolute;
+                bottom: 18px;
+                right: 24px;
+                font-size: 9px;
+                letter-spacing: 0.15em;
+                color: #333;
+                text-transform: uppercase;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="card">
+            <div class="header">
+                <div class="logo">VOX <span>BRIDGE</span></div>
+                <div class="tagline">Traducción en tiempo real</div>
+            </div>
+
+            <div class="status">
+                <div class="dot" id="dot"></div>
+                <span id="status-text">Desconectado</span>
+            </div>
+
+            <div class="volume-section" id="volume-section">
+                <div class="volume-label">
+                    <span>Volumen</span>
+                    <span id="vol-display">100%</span>
+                </div>
+                <input type="range" id="volume" min="0" max="100" value="100" />
+            </div>
+
+            <div class="actions">
+                <button class="primary" id="btn-connect">Conectar</button>
+                <button class="disconnect" id="btn-disconnect">
+                    Desconectar
+                </button>
+            </div>
+
+            <div class="footer">v1.0.0 — alpha</div>
+        </div>
+
+        <script>
+            // ── State ──────────────────────────────────────────────────
+            let ws = null;
+            let audioCtx = null;
+            let gainNode = null;
+            let config = null;
+            let useWorklet = false;
+            let scriptProc = null;
+            let userDisconnected = false;
+            let reconnectTimer = null;
+            let wakeLock = null;
+
+            // ── Elements ───────────────────────────────────────────────
+            const dot = document.getElementById("dot");
+            const statusText = document.getElementById("status-text");
+            const btnConnect = document.getElementById("btn-connect");
+            const btnDisc = document.getElementById("btn-disconnect");
+            const volSection = document.getElementById("volume-section");
+            const volSlider = document.getElementById("volume");
+            const volDisplay = document.getElementById("vol-display");
+
+            // ── Wake lock ──────────────────────────────────────────────
+            async function acquireWakeLock() {
+                if (!("wakeLock" in navigator)) return;
+                try {
+                    wakeLock = await navigator.wakeLock.request("screen");
+                } catch (e) {}
+            }
+
+            function releaseWakeLock() {
+                if (wakeLock) {
+                    wakeLock.release();
+                    wakeLock = null;
+                }
+            }
+
+            // Re-acquire if page becomes visible again (e.g. tab switch)
+            document.addEventListener("visibilitychange", () => {
+                if (
+                    document.visibilityState === "visible" &&
+                    ws &&
+                    ws.readyState === WebSocket.OPEN
+                ) {
+                    acquireWakeLock();
+                }
+            });
+
+            // ── UI helpers ─────────────────────────────────────────────
+            function setStatus(state, text) {
+                dot.className = "dot" + (state ? ` ${state}` : "");
+                statusText.textContent = text;
+            }
+
+            function setConnected(yes) {
+                btnConnect.style.display = yes ? "none" : "block";
+                btnDisc.style.display = yes ? "block" : "none";
+                volSection.classList.toggle("visible", yes);
+            }
+
+            // ── Volume ─────────────────────────────────────────────────
+            volSlider.addEventListener("input", () => {
+                const v = volSlider.value;
+                volDisplay.textContent = `${v}%`;
+                if (gainNode) gainNode.gain.value = v / 100;
+            });
+
+            // ── Connect / Disconnect ───────────────────────────────────
+            btnConnect.addEventListener("click", connect);
+
+            btnDisc.addEventListener("click", () => {
+                userDisconnected = true;
+                clearTimeout(reconnectTimer);
+                releaseWakeLock();
+                if (ws) ws.close();
+            });
+
+            // Auto-reconnect on page focus if not manually disconnected
+            document.addEventListener("visibilitychange", () => {
+                if (
+                    document.visibilityState === "visible" &&
+                    !userDisconnected &&
+                    (!ws || ws.readyState !== WebSocket.OPEN)
+                ) {
+                    clearTimeout(reconnectTimer);
+                    reconnectTimer = setTimeout(connect, 1000);
+                }
+            });
+
+            async function connect() {
+                // Avoid double connection
+                if (
+                    ws &&
+                    (ws.readyState === WebSocket.CONNECTING ||
+                        ws.readyState === WebSocket.OPEN)
+                )
+                    return;
+
+                userDisconnected = false;
+                const host = location.hostname;
+                const url = `ws://${host}:8765`;
+
+                setStatus("", "Conectando…");
+                btnConnect.disabled = true;
+
+                try {
+                    ws = new WebSocket(url);
+                    ws.binaryType = "arraybuffer";
+
+                    ws.onopen = async () => {
+                        setStatus("live", "En vivo");
+                        setConnected(true);
+                        btnConnect.disabled = false;
+                        await acquireWakeLock();
+                    };
+
+                    ws.onmessage = async (e) => {
+                        if (typeof e.data === "string") {
+                            config = JSON.parse(e.data);
+                            await initAudio(config);
+                            return;
+                        }
+                        if (audioCtx) handleChunk(e.data);
+                    };
+
+                    ws.onclose = () => {
+                        setStatus("", "Desconectado");
+                        setConnected(false);
+                        btnConnect.disabled = false;
+                        releaseWakeLock();
+                        teardownAudio();
+                        if (!userDisconnected) {
+                            setStatus("", "Reconectando…");
+                            reconnectTimer = setTimeout(connect, 3000);
+                        }
+                    };
+
+                    ws.onerror = () => {
+                        setStatus("error", "Error de conexión");
+                        btnConnect.disabled = false;
+                    };
+                } catch (err) {
+                    setStatus("error", "Error");
+                    btnConnect.disabled = false;
+                }
+            }
+
+            function disconnect() {
+                if (ws) ws.close();
+            }
+
+            // ── Audio setup ────────────────────────────────────────────
+            async function initAudio(cfg) {
+                audioCtx = new AudioContext({ sampleRate: cfg.sampleRate });
+                gainNode = audioCtx.createGain();
+                gainNode.gain.value = volSlider.value / 100;
+                gainNode.connect(audioCtx.destination);
+
+                if (audioCtx.audioWorklet) {
+                    await audioCtx.audioWorklet.addModule(workletURL());
+                    const node = new AudioWorkletNode(audioCtx, "pcm-player");
+                    node.connect(gainNode);
+                    useWorklet = true;
+                    window._workletNode = node;
+                } else {
+                    initScriptProcessor(cfg);
+                }
+            }
+
+            function workletURL() {
+                const code = `
+      const RING = 32768, PRE = 2048;
+      let ring = new Int16Array(RING), wp = 0, rp = 0, buffering = true;
+      registerProcessor('pcm-player', class extends AudioWorkletProcessor {
+        process(inputs, outputs) {
+          const out = outputs[0][0];
+          const avail = (wp - rp + RING) % RING;
+          if (buffering) { if (avail >= PRE) buffering = false; else { out.fill(0); return true; } }
+          if (avail < out.length) { buffering = true; out.fill(0); return true; }
+          for (let i = 0; i < out.length; i++) {
+            out[i] = ring[rp % RING] / 32768;
+            rp = (rp + 1) % RING;
+          }
+          return true;
+        }
+        pushSamples(samples) {
+          for (let i = 0; i < samples.length; i++) {
+            ring[wp % RING] = samples[i];
+            wp = (wp + 1) % RING;
+          }
+        }
+      });
+    `;
+                return URL.createObjectURL(
+                    new Blob([code], { type: "application/javascript" }),
+                );
+            }
+
+            function initScriptProcessor(cfg) {
+                const bufSize = 4096;
+                let queue = [],
+                    ready = false,
+                    count = 0;
+                scriptProc = audioCtx.createScriptProcessor(bufSize, 0, 1);
+                scriptProc.connect(gainNode);
+                scriptProc.onaudioprocess = (e) => {
+                    const out = e.outputBuffer.getChannelData(0);
+                    if (!ready) {
+                        out.fill(0);
+                        return;
+                    }
+                    const src = queue.shift();
+                    if (!src) {
+                        out.fill(0);
+                        return;
+                    }
+                    for (let i = 0; i < out.length; i++)
+                        out[i] = (src[i] || 0) / 32768;
+                };
+                window._spQueue = queue;
+                window._spReady = (r) => (ready = r);
+                window._spCount = () => ++count;
+            }
+
+            function handleChunk(buf) {
+                const samples = new Int16Array(buf);
+                if (useWorklet && window._workletNode) {
+                    window._workletNode.port.postMessage(samples);
+                } else if (window._spQueue) {
+                    window._spQueue.push(samples);
+                    if (!window._spReady && window._spCount() >= 4)
+                        window._spReady(true);
+                }
+            }
+
+            function teardownAudio() {
+                if (audioCtx) {
+                    audioCtx.close();
+                    audioCtx = null;
+                }
+                gainNode = scriptProc = null;
+                useWorklet = false;
+            }
+        </script>
+    </body>
+</html>

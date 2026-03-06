@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>AudioStream</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+            href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;600&family=Bebas+Neue&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="styles.css" />
+    </head>
+    <body>
+        <canvas id="bg-canvas"></canvas>
+
+        <div class="shell">
+            <!-- HEADER -->
+            <header class="header">
+                <div class="header-left">
+                    <div class="sigil">▣</div>
+                    <div>
+                        <h1 class="title">AUDIOSTREAM</h1>
+                        <p class="tagline">Local Network Audio Receiver</p>
+                    </div>
+                </div>
+                <div
+                    id="status-badge"
+                    class="status-badge"
+                    data-state="disconnected"
+                >
+                    <span class="status-dot"></span>
+                    <span class="status-text">DISCONNECTED</span>
+                </div>
+            </header>
+
+            <!-- CONNECT PANEL -->
+            <section class="panel" id="connect-panel">
+                <label class="panel-label" for="ws-url">WEBSOCKET SERVER</label>
+                <div class="input-row">
+                    <input
+                        id="ws-url"
+                        type="text"
+                        value="ws://192.168.1.100:8765"
+                        placeholder="ws://192.168.x.x:8765"
+                        spellcheck="false"
+                        autocomplete="off"
+                    />
+                    <button id="connect-btn" class="btn btn--connect">
+                        CONNECT
+                    </button>
+                </div>
+                <p class="panel-hint">
+                    Obtén la IP del servidor con <code>ip addr</code> (Linux) o
+                    <code>ipconfig</code> (Windows). El servidor debe estar
+                    corriendo: <code>python server.py --device 0</code>
+                </p>
+            </section>
+
+            <!-- LIVE CONTROLS (hidden until connected) -->
+            <section class="panel panel--live" id="live-panel" hidden>
+                <div class="live-header">
+                    <span class="live-pill">● LIVE</span>
+                    <span class="latency-info">AudioWorklet · ~30–50ms</span>
+                </div>
+
+                <!-- Waveform canvas -->
+                <canvas id="waveform" class="waveform"></canvas>
+
+                <!-- Volume -->
+                <div class="control-row">
+                    <span class="ctl-label">VOL</span>
+                    <input
+                        id="volume-slider"
+                        class="slider"
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        value="1"
+                    />
+                    <span id="volume-display" class="ctl-value">100%</span>
+                    <button id="mute-btn" class="btn btn--mute" title="Mute">
+                        🔊
+                    </button>
+                </div>
+
+                <!-- Buffer health -->
+                <div class="control-row">
+                    <span class="ctl-label">BUF</span>
+                    <div class="buffer-track">
+                        <div id="buffer-fill" class="buffer-fill"></div>
+                        <div class="buffer-zones">
+                            <span style="left: 10%">20ms</span>
+                            <span style="left: 30%">60ms</span>
+                        </div>
+                    </div>
+                    <span id="buffer-display" class="ctl-value">—</span>
+                </div>
+            </section>
+
+            <!-- STATS (hidden until connected) -->
+            <div class="stats-grid" id="stats-grid" hidden>
+                <div class="stat-card">
+                    <span class="stat-val" id="stat-chunks">0</span>
+                    <span class="stat-key">chunks rx</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-val" id="stat-bytes">0 B</span>
+                    <span class="stat-key">data rx</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-val">512</span>
+                    <span class="stat-key">frames/chunk</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-val">44100</span>
+                    <span class="stat-key">sample rate</span>
+                </div>
+            </div>
+
+            <!-- ERROR -->
+            <div id="error-bar" class="error-bar" hidden></div>
+
+            <!-- SETUP GUIDE (shown when disconnected) -->
+            <section class="guide" id="guide">
+                <p class="guide-title">SETUP RÁPIDO</p>
+                <div class="steps">
+                    <div class="step">
+                        <span class="step-n">01</span>
+                        <div>
+                            <strong>Instalar dependencias</strong>
+                            <code
+                                >pip install sounddevice websockets numpy</code
+                            >
+                        </div>
+                    </div>
+                    <div class="step">
+                        <span class="step-n">02</span>
+                        <div>
+                            <strong>Listar dispositivos de entrada</strong>
+                            <code>python server.py --list-devices</code>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <span class="step-n">03</span>
+                        <div>
+                            <strong>Lanzar el servidor</strong>
+                            <code>python server.py --device 0</code>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <span class="step-n">04</span>
+                        <div>
+                            <strong
+                                >Abrir esta página, introducir la IP y
+                                conectar</strong
+                            >
+                            <code>ws://192.168.x.x:8765</code>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+        <!-- /shell -->
+
+        <!-- AudioWorklet processor — inline as a Blob so no server is needed -->
+        <script id="worklet-src" type="x-worklet">
+            // FIX-2: pre-buffer before starting playback to absorb WiFi jitter.
+            // FIX-1: sample rate is forced in AudioContext, not here — worklet is rate-agnostic.
+            const RING           = 32768;  // ~740ms max at 44100Hz
+            const PREBUF_SAMPLES = 2048;   // ~46ms — wait before first output
+
+            class P extends AudioWorkletProcessor {
+              constructor() {
+                super();
+                this._buf   = new Float32Array(RING);
+                this._w     = 0;
+                this._r     = 0;
+                this._ready = false;  // true once pre-buffer filled
+
+                this.port.onmessage = e => {
+                  if (e.data.type === 'clear') {
+                    this._w = this._r = 0; this._ready = false; return;
+                  }
+                  const s = e.data.samples;
+                  for (let i = 0; i < s.length; i++) {
+                    this._buf[this._w] = s[i];
+                    this._w = (this._w + 1) % RING;
+                  }
+                  // Start playback once we have enough buffered
+                  if (!this._ready && this._avail >= PREBUF_SAMPLES) {
+                    this._ready = true;
+                  }
+                };
+              }
+
+              get _avail() { return (this._w - this._r + RING) % RING; }
+
+              process(_, outputs) {
+                const out = outputs[0][0];
+                const len = out.length;
+
+                if (!this._ready) {
+                  out.fill(0);
+                } else if (this._avail >= len) {
+                  for (let i = 0; i < len; i++) {
+                    out[i] = this._buf[this._r];
+                    this._r = (this._r + 1) % RING;
+                  }
+                } else {
+                  // Underrun — silence and re-trigger pre-buffer
+                  out.fill(0);
+                  this._ready = false;
+                }
+
+                // Report fill level every ~93ms (4096 / 44100)
+                if ((this._w & 4095) === 0)
+                  this.port.postMessage({ type: 'stats', buffered: this._avail });
+
+                return true;
+              }
+            }
+            registerProcessor('asp', P);
+        </script>
+
+        <script src="app.js"></script>
+    </body>
+</html>
