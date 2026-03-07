@@ -19,11 +19,12 @@ class BroadcastWorker:
         self._event_loop = None
         self._audio_queue = None
         self._thread = None
+        self._http_server_thread = None
 
     # ── Public API ────────────────────────────────────────────
     def start(self):
         if self.status == WorkerStatus.RUNNING:
-            print("Broadcast already stopped")
+            print("Broadcast already running")
             return
 
         self._thread = threading.Thread(target=self._run, daemon=True)
@@ -42,16 +43,18 @@ class BroadcastWorker:
 
         self.status = WorkerStatus.STOPPED
         loop, queue = self._event_loop, self._audio_queue
-        self._event_loop = None  # ← push_chunk ya no puede tocar el loop
+        self._event_loop = None
         self._audio_queue = None
         if loop and queue:
             loop.call_soon_threadsafe(queue.put_nowait, None)
+
         print("[BroadcastWorker] Stopped")
 
     def restart(self):
         self.stop()
         if self._thread:
             self._thread.join(timeout=2)
+
         self.start()
 
     # ── Called by AudioWorker callback (PortAudio thread) ─────
@@ -132,6 +135,10 @@ class BroadcastWorker:
     def _start_http_server(self):
         # import ssl
 
+        if self._http_server_thread:
+            print("HTTP server already running")
+            return
+
         from core.utils import resource_path
 
         directory = resource_path("assets/webclient")
@@ -152,4 +159,6 @@ class BroadcastWorker:
             print("[BroadcastWorker] Web client at http://0.0.0.0:5173")
             httpd.serve_forever()
 
-        threading.Thread(target=_serve, daemon=True, name="HTTPServer").start()
+        self._http_server_thread = threading.Thread(
+            target=_serve, daemon=True, name="HTTPServer"
+        ).start()

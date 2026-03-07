@@ -35,62 +35,48 @@
                 font-family: "DM Mono", monospace;
                 min-height: 100dvh;
                 display: flex;
-                flex-direction: column;
                 align-items: center;
                 justify-content: center;
-                gap: 0;
                 overflow: hidden;
             }
 
-            /* ── Grain overlay ── */
             body::before {
                 content: "";
                 position: fixed;
                 inset: 0;
-                background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+                background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
                 pointer-events: none;
                 z-index: 100;
             }
 
-            /* ── Layout ── */
             .card {
                 width: min(420px, 92vw);
                 background: var(--surface);
                 border: 1px solid var(--border);
-                padding: 52px 48px 48px;
+                padding: 48px 44px 44px;
                 display: flex;
                 flex-direction: column;
-                gap: 40px;
+                gap: 36px;
                 position: relative;
-            }
-
-            /* ── Header ── */
-            .header {
-                display: flex;
-                flex-direction: column;
-                gap: 6px;
             }
 
             .logo {
                 font-family: "Cormorant Garamond", serif;
-                font-size: 32px;
+                font-size: 30px;
                 font-weight: 300;
                 letter-spacing: 0.12em;
-                color: var(--text);
             }
-
             .logo span {
                 color: var(--accent);
             }
-
             .tagline {
+                margin-top: 4px;
                 font-size: 10px;
                 letter-spacing: 0.2em;
                 color: var(--muted);
                 text-transform: uppercase;
             }
 
-            /* ── Status pill ── */
             .status {
                 display: flex;
                 align-items: center;
@@ -99,7 +85,6 @@
                 letter-spacing: 0.1em;
                 color: var(--muted);
             }
-
             .dot {
                 width: 6px;
                 height: 6px;
@@ -108,55 +93,60 @@
                 transition:
                     background 0.4s,
                     box-shadow 0.4s;
+                flex-shrink: 0;
             }
-
             .dot.live {
                 background: var(--green);
                 box-shadow: 0 0 8px var(--green);
                 animation: pulse 2s ease-in-out infinite;
             }
-
+            .dot.connecting {
+                background: var(--accent);
+                box-shadow: 0 0 8px var(--accent);
+                animation: pulse 0.8s ease-in-out infinite;
+            }
             .dot.error {
                 background: var(--danger);
             }
-
             @keyframes pulse {
                 0%,
                 100% {
                     opacity: 1;
                 }
                 50% {
-                    opacity: 0.4;
+                    opacity: 0.35;
                 }
             }
 
-            /* ── Volume ── */
             .volume-section {
                 display: flex;
                 flex-direction: column;
-                gap: 14px;
+                gap: 12px;
                 opacity: 0;
                 pointer-events: none;
                 transition: opacity 0.4s;
+                height: 0;
+                overflow: hidden;
             }
-
             .volume-section.visible {
                 opacity: 1;
                 pointer-events: all;
+                height: auto;
             }
-
-            .volume-label {
+            .vol-row {
                 display: flex;
                 justify-content: space-between;
-                font-size: 10px;
-                letter-spacing: 0.15em;
+                align-items: center;
+            }
+            .vol-label {
+                font-size: 9px;
+                letter-spacing: 0.2em;
                 color: var(--muted);
                 text-transform: uppercase;
             }
-
-            .volume-label span:last-child {
+            .vol-value {
+                font-size: 11px;
                 color: var(--accent);
-                font-variant-numeric: tabular-nums;
             }
 
             input[type="range"] {
@@ -168,7 +158,6 @@
                 outline: none;
                 cursor: pointer;
             }
-
             input[type="range"]::-webkit-slider-thumb {
                 -webkit-appearance: none;
                 appearance: none;
@@ -181,12 +170,10 @@
                     transform 0.15s,
                     box-shadow 0.15s;
             }
-
             input[type="range"]::-webkit-slider-thumb:hover {
                 transform: scale(1.3);
                 box-shadow: 0 0 10px rgba(200, 169, 126, 0.4);
             }
-
             input[type="range"]::-moz-range-thumb {
                 width: 14px;
                 height: 14px;
@@ -196,16 +183,14 @@
                 cursor: pointer;
             }
 
-            /* ── Buttons ── */
             .actions {
                 display: flex;
                 flex-direction: column;
-                gap: 10px;
+                gap: 8px;
             }
-
             button {
                 width: 100%;
-                padding: 14px;
+                padding: 13px;
                 border: 1px solid var(--border);
                 background: transparent;
                 color: var(--text);
@@ -219,46 +204,62 @@
                     color 0.2s,
                     background 0.2s;
             }
-
             button.primary {
                 border-color: var(--accent);
                 color: var(--accent);
             }
-
             button.primary:hover {
                 background: rgba(200, 169, 126, 0.08);
             }
-
-            button.disconnect {
+            button.danger {
                 border-color: var(--danger);
                 color: var(--danger);
                 display: none;
             }
-
-            button.disconnect:hover {
+            button.danger:hover {
                 background: rgba(160, 90, 90, 0.08);
             }
-
+            button.secondary {
+                border-color: var(--muted);
+                color: var(--muted);
+                display: none;
+                font-size: 10px;
+                padding: 10px;
+            }
+            button.secondary:hover {
+                border-color: var(--text);
+                color: var(--text);
+            }
             button:disabled {
                 opacity: 0.3;
                 cursor: not-allowed;
             }
 
-            /* ── Footer ── */
+            .error-bar {
+                font-size: 10px;
+                letter-spacing: 0.05em;
+                color: var(--danger);
+                padding: 8px 0;
+                display: none;
+            }
+            .error-bar.visible {
+                display: block;
+            }
+
             .footer {
                 position: absolute;
-                bottom: 18px;
-                right: 24px;
+                bottom: 16px;
+                right: 20px;
                 font-size: 9px;
                 letter-spacing: 0.15em;
-                color: #333;
+                color: #2a2a2a;
                 text-transform: uppercase;
             }
         </style>
     </head>
     <body>
         <div class="card">
-            <div class="header">
+            <div>
                 <div class="logo">VOX <span>BRIDGE</span></div>
                 <div class="tagline">Traducción en tiempo real</div>
             </div>
@@ -268,101 +269,142 @@
                 <span id="status-text">Desconectado</span>
             </div>
 
-            <div class="volume-section" id="volume-section">
-                <div class="volume-label">
-                    <span>Volumen</span>
-                    <span id="vol-display">100%</span>
+            <div class="volume-section" id="vol-section">
+                <div class="vol-row">
+                    <span class="vol-label">Volumen</span>
+                    <span class="vol-value" id="vol-display">100%</span>
                 </div>
-                <input type="range" id="volume" min="0" max="100" value="100" />
+                <input
+                    type="range"
+                    id="vol-slider"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value="1"
+                />
             </div>
+
+            <div class="error-bar" id="error-bar"></div>
 
             <div class="actions">
                 <button class="primary" id="btn-connect">Conectar</button>
-                <button class="disconnect" id="btn-disconnect">
-                    Desconectar
+                <button class="danger" id="btn-disc">Desconectar</button>
+                <button class="secondary" id="btn-refresh">
+                    ↻ Actualizar dispositivo de audio
                 </button>
             </div>
 
             <div class="footer">v1.0.0 — alpha</div>
         </div>
 
+        <!-- AudioWorklet processor inline (from working debug.html) -->
+        <script id="worklet-src" type="x-worklet">
+            const RING = 32768, PREBUF = 2048;
+            class P extends AudioWorkletProcessor {
+              constructor() {
+                super();
+                this._buf = new Float32Array(RING);
+                this._w = 0; this._r = 0; this._ready = false;
+                this.port.onmessage = e => {
+                  if (e.data.type === 'clear') { this._w = this._r = 0; this._ready = false; return; }
+                  const s = e.data.samples;
+                  for (let i = 0; i < s.length; i++) { this._buf[this._w] = s[i]; this._w = (this._w + 1) % RING; }
+                  if (!this._ready && this._avail >= PREBUF) this._ready = true;
+                };
+              }
+              get _avail() { return (this._w - this._r + RING) % RING; }
+              process(_, outputs) {
+                const out = outputs[0][0], len = out.length;
+                if (!this._ready) { out.fill(0); }
+                else if (this._avail >= len) { for (let i=0;i<len;i++) { out[i]=this._buf[this._r]; this._r=(this._r+1)%RING; } }
+                else { out.fill(0); this._ready = false; }
+                return true;
+              }
+            }
+            registerProcessor('asp', P);
+        </script>
+
         <script>
-            // ── State ──────────────────────────────────────────────────
+            "use strict";
+
+            // ── Constants (must match server) ─────────────────────────────
+            const SERVER_SAMPLE_RATE = 44100;
+            const PREBUFFER_CHUNKS = 4;
+            const SP_RING_SIZE = 32768;
+
+            // ── State ─────────────────────────────────────────────────────
             let ws = null;
             let audioCtx = null;
             let gainNode = null;
-            let config = null;
+            let workletNode = null;
+            let scriptNode = null;
             let useWorklet = false;
-            let scriptProc = null;
+            let muted = false;
             let userDisconnected = false;
             let reconnectTimer = null;
             let wakeLock = null;
 
-            // ── Elements ───────────────────────────────────────────────
-            const dot = document.getElementById("dot");
-            const statusText = document.getElementById("status-text");
-            const btnConnect = document.getElementById("btn-connect");
-            const btnDisc = document.getElementById("btn-disconnect");
-            const volSection = document.getElementById("volume-section");
-            const volSlider = document.getElementById("volume");
-            const volDisplay = document.getElementById("vol-display");
+            // ScriptProcessor ring buffer (fallback)
+            const spRing = new Float32Array(SP_RING_SIZE);
+            let spWrite = 0,
+                spRead = 0,
+                spReady = false,
+                spChunkCount = 0;
 
-            // ── Wake lock ──────────────────────────────────────────────
+            // ── Elements ──────────────────────────────────────────────────
+
+            const $dot = document.getElementById("dot");
+            const $stTxt = document.getElementById("status-text");
+            const $btnConn = document.getElementById("btn-connect");
+            const $btnDisc = document.getElementById("btn-disc");
+            const $volSec = document.getElementById("vol-section");
+            const $volSldr = document.getElementById("vol-slider");
+            const $volDisp = document.getElementById("vol-display");
+            const $errBar = document.getElementById("error-bar");
+            const $btnRefresh = document.getElementById("btn-refresh");
+
+            // ── UI helpers ────────────────────────────────────────────────
+            function setStatus(state, text) {
+                $dot.className = "dot" + (state ? " " + state : "");
+                $stTxt.textContent = text;
+            }
+
+            function setConnected(yes) {
+                $btnConn.style.display = yes ? "none" : "block";
+                $btnDisc.style.display = yes ? "block" : "none";
+                $btnRefresh.style.display = yes ? "block" : "none";
+                $volSec.classList.toggle("visible", yes);
+            }
+
+            function showError(msg) {
+                $errBar.textContent = msg || "";
+                $errBar.classList.toggle("visible", !!msg);
+            }
+
+            // ── Wake lock ─────────────────────────────────────────────────
             async function acquireWakeLock() {
                 if (!("wakeLock" in navigator)) return;
                 try {
                     wakeLock = await navigator.wakeLock.request("screen");
-                } catch (e) {}
+                } catch (_) {}
             }
-
             function releaseWakeLock() {
                 if (wakeLock) {
                     wakeLock.release();
                     wakeLock = null;
                 }
             }
-
-            // Re-acquire if page becomes visible again (e.g. tab switch)
+            // Re-acquire if tab comes back to foreground while connected
             document.addEventListener("visibilitychange", () => {
                 if (
                     document.visibilityState === "visible" &&
                     ws &&
                     ws.readyState === WebSocket.OPEN
-                ) {
+                )
                     acquireWakeLock();
-                }
             });
 
-            // ── UI helpers ─────────────────────────────────────────────
-            function setStatus(state, text) {
-                dot.className = "dot" + (state ? ` ${state}` : "");
-                statusText.textContent = text;
-            }
-
-            function setConnected(yes) {
-                btnConnect.style.display = yes ? "none" : "block";
-                btnDisc.style.display = yes ? "block" : "none";
-                volSection.classList.toggle("visible", yes);
-            }
-
-            // ── Volume ─────────────────────────────────────────────────
-            volSlider.addEventListener("input", () => {
-                const v = volSlider.value;
-                volDisplay.textContent = `${v}%`;
-                if (gainNode) gainNode.gain.value = v / 100;
-            });
-
-            // ── Connect / Disconnect ───────────────────────────────────
-            btnConnect.addEventListener("click", connect);
-
-            btnDisc.addEventListener("click", () => {
-                userDisconnected = true;
-                clearTimeout(reconnectTimer);
-                releaseWakeLock();
-                if (ws) ws.close();
-            });
-
-            // Auto-reconnect on page focus if not manually disconnected
+            // ── Auto-reconnect on page focus ──────────────────────────────
             document.addEventListener("visibilitychange", () => {
                 if (
                     document.visibilityState === "visible" &&
@@ -374,8 +416,99 @@
                 }
             });
 
+            // ── Volume ────────────────────────────────────────────────────
+            $volSldr.addEventListener("input", () => {
+                const v = parseFloat($volSldr.value);
+                $volDisp.textContent = Math.round(v * 100) + "%";
+                if (gainNode && !muted) gainNode.gain.value = v;
+            });
+
+            // ── Audio init ────────────────────────────────────────────────
+            async function initAudio() {
+                // FIX-1: force sample rate to match server — prevents pitch shift
+                audioCtx = new AudioContext({
+                    sampleRate: SERVER_SAMPLE_RATE,
+                    latencyHint: "interactive",
+                });
+                gainNode = audioCtx.createGain();
+                gainNode.gain.value = muted ? 0 : parseFloat($volSldr.value);
+                gainNode.connect(audioCtx.destination);
+
+                // FIX-3: AudioWorklet needs HTTPS or localhost — fallback to ScriptProcessor on HTTP
+                if (audioCtx.audioWorklet) {
+                    const src =
+                        document.getElementById("worklet-src").textContent;
+                    const blob = new Blob([src], {
+                        type: "application/javascript",
+                    });
+                    const burl = URL.createObjectURL(blob);
+                    await audioCtx.audioWorklet.addModule(burl);
+                    URL.revokeObjectURL(burl);
+                    workletNode = new AudioWorkletNode(audioCtx, "asp");
+                    workletNode.connect(gainNode);
+                    useWorklet = true;
+                } else {
+                    // ScriptProcessor fallback
+                    const bufSize = 2048;
+                    scriptNode = audioCtx.createScriptProcessor(bufSize, 0, 1);
+                    scriptNode.connect(gainNode);
+                    spWrite = spRead = spChunkCount = 0;
+                    spReady = false;
+                    scriptNode.onaudioprocess = (e) => {
+                        const out = e.outputBuffer.getChannelData(0);
+                        const avail =
+                            (spWrite - spRead + SP_RING_SIZE) % SP_RING_SIZE;
+                        if (!spReady || avail < out.length) {
+                            out.fill(0);
+                            if (avail < out.length) {
+                                spReady = false;
+                                spChunkCount = 0;
+                            }
+                            return;
+                        }
+                        for (let i = 0; i < out.length; i++) {
+                            out[i] = spRing[spRead];
+                            spRead = (spRead + 1) % SP_RING_SIZE;
+                        }
+                    };
+                    useWorklet = false;
+                }
+            }
+
+            function feedAudio(f32) {
+                if (useWorklet) {
+                    // FIX-2: pre-buffering handled inside worklet
+                    workletNode.port.postMessage(
+                        { type: "chunk", samples: f32 },
+                        [f32.buffer],
+                    );
+                } else {
+                    for (let i = 0; i < f32.length; i++) {
+                        spRing[spWrite] = f32[i];
+                        spWrite = (spWrite + 1) % SP_RING_SIZE;
+                    }
+                    // FIX-2 fallback: wait for N chunks before starting playback
+                    if (!spReady && ++spChunkCount >= PREBUFFER_CHUNKS)
+                        spReady = true;
+                }
+            }
+
+            function teardownAudio() {
+                workletNode?.disconnect();
+                workletNode = null;
+                scriptNode?.disconnect();
+                scriptNode = null;
+                gainNode?.disconnect();
+                gainNode = null;
+                audioCtx?.close();
+                audioCtx = null;
+                spReady = false;
+                spWrite = spRead = spChunkCount = 0;
+            }
+
+            // ── Connect ───────────────────────────────────────────────────
             async function connect() {
-                // Avoid double connection
+                // Guard: prevent double connection
                 if (
                     ws &&
                     (ws.readyState === WebSocket.CONNECTING ||
@@ -384,150 +517,90 @@
                     return;
 
                 userDisconnected = false;
-                const host = location.hostname;
-                const url = `ws://${host}:8765`;
-
-                setStatus("", "Conectando…");
-                btnConnect.disabled = true;
+                showError(null);
+                setStatus("connecting", "Conectando…");
+                $btnConn.disabled = true;
 
                 try {
-                    ws = new WebSocket(url);
-                    ws.binaryType = "arraybuffer";
-
-                    ws.onopen = async () => {
-                        setStatus("live", "En vivo");
-                        setConnected(true);
-                        btnConnect.disabled = false;
-                        await acquireWakeLock();
-                    };
-
-                    ws.onmessage = async (e) => {
-                        if (typeof e.data === "string") {
-                            config = JSON.parse(e.data);
-                            await initAudio(config);
-                            return;
-                        }
-                        if (audioCtx) handleChunk(e.data);
-                    };
-
-                    ws.onclose = () => {
-                        setStatus("", "Desconectado");
-                        setConnected(false);
-                        btnConnect.disabled = false;
-                        releaseWakeLock();
-                        teardownAudio();
-                        if (!userDisconnected) {
-                            setStatus("", "Reconectando…");
-                            reconnectTimer = setTimeout(connect, 3000);
-                        }
-                    };
-
-                    ws.onerror = () => {
-                        setStatus("error", "Error de conexión");
-                        btnConnect.disabled = false;
-                    };
+                    await initAudio();
+                    audioCtx.resume();
                 } catch (err) {
-                    setStatus("error", "Error");
-                    btnConnect.disabled = false;
+                    setStatus("error", "Error de audio");
+                    showError(err.message);
+                    $btnConn.disabled = false;
+                    return;
                 }
-            }
 
-            function disconnect() {
-                if (ws) ws.close();
-            }
+                const url = `ws://${location.hostname}:8765`;
+                ws = new WebSocket(url);
+                ws.binaryType = "arraybuffer";
 
-            // ── Audio setup ────────────────────────────────────────────
-            async function initAudio(cfg) {
-                audioCtx = new AudioContext({ sampleRate: cfg.sampleRate });
-                gainNode = audioCtx.createGain();
-                gainNode.gain.value = volSlider.value / 100;
-                gainNode.connect(audioCtx.destination);
-
-                if (audioCtx.audioWorklet) {
-                    await audioCtx.audioWorklet.addModule(workletURL());
-                    const node = new AudioWorkletNode(audioCtx, "pcm-player");
-                    node.connect(gainNode);
-                    useWorklet = true;
-                    window._workletNode = node;
-                } else {
-                    initScriptProcessor(cfg);
-                }
-            }
-
-            function workletURL() {
-                const code = `
-      const RING = 32768, PRE = 2048;
-      let ring = new Int16Array(RING), wp = 0, rp = 0, buffering = true;
-      registerProcessor('pcm-player', class extends AudioWorkletProcessor {
-        process(inputs, outputs) {
-          const out = outputs[0][0];
-          const avail = (wp - rp + RING) % RING;
-          if (buffering) { if (avail >= PRE) buffering = false; else { out.fill(0); return true; } }
-          if (avail < out.length) { buffering = true; out.fill(0); return true; }
-          for (let i = 0; i < out.length; i++) {
-            out[i] = ring[rp % RING] / 32768;
-            rp = (rp + 1) % RING;
-          }
-          return true;
-        }
-        pushSamples(samples) {
-          for (let i = 0; i < samples.length; i++) {
-            ring[wp % RING] = samples[i];
-            wp = (wp + 1) % RING;
-          }
-        }
-      });
-    `;
-                return URL.createObjectURL(
-                    new Blob([code], { type: "application/javascript" }),
-                );
-            }
-
-            function initScriptProcessor(cfg) {
-                const bufSize = 4096;
-                let queue = [],
-                    ready = false,
-                    count = 0;
-                scriptProc = audioCtx.createScriptProcessor(bufSize, 0, 1);
-                scriptProc.connect(gainNode);
-                scriptProc.onaudioprocess = (e) => {
-                    const out = e.outputBuffer.getChannelData(0);
-                    if (!ready) {
-                        out.fill(0);
-                        return;
-                    }
-                    const src = queue.shift();
-                    if (!src) {
-                        out.fill(0);
-                        return;
-                    }
-                    for (let i = 0; i < out.length; i++)
-                        out[i] = (src[i] || 0) / 32768;
+                ws.onopen = async () => {
+                    setStatus("live", "En vivo");
+                    setConnected(true);
+                    $btnConn.disabled = false;
+                    await acquireWakeLock();
                 };
-                window._spQueue = queue;
-                window._spReady = (r) => (ready = r);
-                window._spCount = () => ++count;
+
+                ws.onmessage = (e) => {
+                    if (typeof e.data === "string") return; // config message — ignore
+                    const i16 = new Int16Array(e.data);
+                    const f32 = new Float32Array(i16.length);
+                    for (let i = 0; i < i16.length; i++)
+                        f32[i] = i16[i] / 32768;
+                    feedAudio(f32);
+                };
+
+                ws.onclose = (e) => {
+                    setStatus("", "Desconectado");
+                    setConnected(false);
+                    $btnConn.disabled = false;
+                    releaseWakeLock();
+                    teardownAudio();
+                    ws = null;
+                    if (!userDisconnected) {
+                        setStatus("", "Reconectando…");
+                        reconnectTimer = setTimeout(connect, 3000);
+                    }
+                };
+
+                ws.onerror = () => {
+                    showError(
+                        "No se pudo conectar. Verifica la IP y que el servidor esté corriendo.",
+                    );
+                    $btnConn.disabled = false;
+                };
             }
 
-            function handleChunk(buf) {
-                const samples = new Int16Array(buf);
-                if (useWorklet && window._workletNode) {
-                    window._workletNode.port.postMessage(samples);
-                } else if (window._spQueue) {
-                    window._spQueue.push(samples);
-                    if (!window._spReady && window._spCount() >= 4)
-                        window._spReady(true);
+            // ── Refresh audio device ─────────────────────────────────
+            // Recreates AudioContext so browser picks up newly connected devices (e.g. bluetooth headset)
+            $btnRefresh.addEventListener("click", async () => {
+                if (!ws || ws.readyState !== WebSocket.OPEN) return;
+                teardownAudio();
+                try {
+                    await initAudio();
+                    audioCtx.resume();
+                    setStatus("live", "En vivo");
+                } catch (err) {
+                    showError("Error al actualizar audio: " + err.message);
                 }
-            }
+            });
 
-            function teardownAudio() {
-                if (audioCtx) {
-                    audioCtx.close();
-                    audioCtx = null;
+            // ── Disconnect ────────────────────────────────────────────────
+            $btnDisc.addEventListener("click", () => {
+                userDisconnected = true;
+                clearTimeout(reconnectTimer);
+                releaseWakeLock();
+                if (ws) {
+                    ws.close(1000);
+                    ws = null;
                 }
-                gainNode = scriptProc = null;
-                useWorklet = false;
-            }
+                teardownAudio();
+                setStatus("", "Desconectado");
+                setConnected(false);
+            });
+
+            $btnConn.addEventListener("click", connect);
         </script>
     </body>
 </html>

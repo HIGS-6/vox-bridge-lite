@@ -146,7 +146,7 @@ class PreacherMonitorWorker:
         self.error = None
 
         if self.status == WorkerStatus.RUNNING:
-            print("Already Running")
+            print("Preacher Audio Already Running")
             return
 
         try:
@@ -199,7 +199,7 @@ class PreacherMonitorWorker:
 
     def stop(self):
         if self.status == WorkerStatus.STOPPED:
-            print("Already Stopped")
+            print("Preacher Audio Already Stopped")
             return
 
         if self._stream:

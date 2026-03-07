@@ -62,7 +62,7 @@ class TranslatorAudioPage(QWidget):
         _layout.addWidget(start_translator_audio_btn)
 
         stop_translator_audio_btn = QPushButton("Stop Translator Audio")
-        stop_translator_audio_btn.clicked.connect(lambda: self._transltor_audio.start())
+        stop_translator_audio_btn.clicked.connect(lambda: self._transltor_audio.stop())
         _layout.addWidget(stop_translator_audio_btn)
 
         # Input Device Field
