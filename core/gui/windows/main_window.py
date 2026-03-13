@@ -41,7 +41,7 @@ class MainWindow(FramelessWindow):
         self.broadcast_worker = broadcast_worker
 
         self.setWindowTitle("Vox Bridge - (Lite)")
-        self.resize(1000, 700)
+        self.resize(1280, 720)
         self._build()
 
     def _build(self):

@@ -1,5 +1,5 @@
 #define MyAppName "Vox Bridge Lite"
-#define MyAppVersion "0.0.1"
+#define MyAppVersion "0.1.0"
 #define MyAppPublisher "HIGS Dev"
 #define MyAppExeName "main.exe"
 

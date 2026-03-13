@@ -18,4 +18,3 @@ shiboken6==6.10.2
 sounddevice==0.5.5
 websocket-server==0.6.4
 websockets==16.0
-zeroconf==0.148.0
