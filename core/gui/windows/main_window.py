@@ -1,5 +1,6 @@
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QHBoxLayout, QStackedWidget, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QStackedWidget, QVBoxLayout, QWidget
+from qframelesswindow import FramelessWindow
 
 from core.app_state import AppState
 from core.gui.pages.broadcast_page import BroadcastPage
@@ -7,35 +8,52 @@ from core.gui.pages.logs_page import LogsPage
 from core.gui.pages.preacher_audio_page import PreacherAudioPage
 from core.gui.pages.translator_audio_page import TranslatorAudioPage
 from core.gui.widgets.side_panel import SidePanel
-from core.services.audio_worker import PreacherMonitorWorker, TranslatorWorker
+from core.gui.widgets.title_bar import VoxTitleBar
+from core.services.audio.source_audio_worker import SourceAudioWorker
+from core.services.audio.translator_audio_worker import TranslatorAudioWorker
 from core.services.broadcast_worker import BroadcastWorker
+from core.services.logger_worker import LogHandler
 
-LITE_WORKERS = ["Preacher Audio", "Translator Audio", "Broadcast"]
+LITE_WORKERS = ["Preacher Audio", "Translator Audio", "Broadcast", "Logs"]
 
 
-class MainWindow(QWidget):
-    _show_signal = Signal()  # bridge: gui_ready comes from worker thread
+class MainWindow(FramelessWindow):
+    _show_signal = Signal()
 
     def __init__(
         self,
         app_state: AppState,
-        preacher_audio: PreacherMonitorWorker,
-        translator_audio: TranslatorWorker,
+        log_handler: LogHandler,
+        preacher_audio: SourceAudioWorker,
+        translator_audio: TranslatorAudioWorker,
         broadcast_worker: BroadcastWorker,
     ):
         super().__init__()
+        self._log_handler = log_handler
         self._app_state = app_state
+
+        self._title_bar = VoxTitleBar(self)
+        self.setTitleBar(self._title_bar)
+
         # Workers:
         self.preacher_audio = preacher_audio
         self.translator_audio = translator_audio
         self.broadcast_worker = broadcast_worker
 
         self.setWindowTitle("Vox Bridge - (Lite)")
-        self.resize(900, 600)
+        self.resize(1000, 700)
         self._build()
 
     def _build(self):
-        root = QHBoxLayout(self)
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(0)
+
+        outer.addWidget(self._title_bar)
+
+        # Contenido horizontal debajo
+        content = QWidget()
+        root = QHBoxLayout(content)
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(0)
 
@@ -49,6 +67,7 @@ class MainWindow(QWidget):
             self._stack.addWidget(self._make_page(worker))
         root.addWidget(self._stack)
 
+        outer.addWidget(content)
         self._side.select(LITE_WORKERS[0])
 
     def _make_page(self, worker: str) -> QWidget:
@@ -60,7 +79,7 @@ class MainWindow(QWidget):
             case "Broadcast":
                 return BroadcastPage(self._app_state, self.broadcast_worker)
             case "Logs":
-                return LogsPage(self._app_state)
+                return LogsPage(self._app_state, self._log_handler)
             case _:
                 from PySide6.QtCore import Qt
                 from PySide6.QtWidgets import QLabel

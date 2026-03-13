@@ -1,21 +1,36 @@
 import asyncio
 import json
+import logging
+import socket
 import threading
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 import websockets
 from websockets.exceptions import ConnectionClosed
 
+from core.app_state import AppState
 from core.models.worker_status import WorkerStatus
+
+log = logging.getLogger("Broadcast Worker")
 
 # from core.utils.cert import generate_self_signed_cert
 
 
+def get_local_ip() -> str:
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "127.0.0.1"
+
+
 class BroadcastWorker:
-    def __init__(self, state):
+    def __init__(self, state: AppState):
         self.status = WorkerStatus.STOPPED
         self._state = state
-        self._connected = set()
         self._event_loop = None
         self._audio_queue = None
         self._thread = None
@@ -25,6 +40,7 @@ class BroadcastWorker:
     def start(self):
         if self.status == WorkerStatus.RUNNING:
             print("Broadcast already running")
+            log.info("Broadcast already running")
             return
 
         self._thread = threading.Thread(target=self._run, daemon=True)
@@ -32,10 +48,12 @@ class BroadcastWorker:
 
         self.status = WorkerStatus.RUNNING
         print("[BroadcastWorker] Started")
+        log.info("Started")
 
     def stop(self):
         if self.status == WorkerStatus.STOPPED:
             print("Broadcast already stopped")
+            log.info("Already stopped")
             return
 
         if self._event_loop:
@@ -49,6 +67,7 @@ class BroadcastWorker:
             loop.call_soon_threadsafe(queue.put_nowait, None)
 
         print("[BroadcastWorker] Stopped")
+        log.info("Stopped")
 
     def restart(self):
         self.stop()
@@ -86,6 +105,7 @@ class BroadcastWorker:
         # ssl_ctx.load_cert_chain(cert_file, key_file)
 
         print(f"[BroadcastWorker] ws://{s.host}:{s.port}")
+        log.info(f"Websocket hosted at: ws://{s.host}:{s.port}")
         async with websockets.serve(self._handler, s.host, s.port):
             await self._broadcast_loop()
 
@@ -95,20 +115,21 @@ class BroadcastWorker:
 
         while not self.status == WorkerStatus.STOPPED:
             chunk = await self._audio_queue.get()
-            if not self._connected:
+            if not self._state.broadcast_settings.connected_clients:
                 continue
             dead = set()
-            for ws in list(self._connected):
+            for ws in list(self._state.broadcast_settings.connected_clients):
                 try:
                     await ws.send(chunk)
                 except Exception:
                     dead.add(ws)
-            self._connected -= dead
+            self._state.broadcast_settings.connected_clients -= dead
 
     async def _handler(self, ws):
         addr = ws.remote_address
         print(f"[BroadcastWorker] Client connected: {addr[0]}:{addr[1]}")
-        self._connected.add(ws)
+        log.info(f"Client connected: {addr[0]}:{addr[1]}")
+        self._state.broadcast_settings.connected_clients.add(ws)
 
         s = self._state.broadcast_settings
         await ws.send(
@@ -129,14 +150,16 @@ class BroadcastWorker:
         except ConnectionClosed:
             pass
         finally:
-            self._connected.discard(ws)
+            self._state.broadcast_settings.connected_clients.discard(ws)
             print(f"[BroadcastWorker] Client disconnected: {addr[0]}:{addr[1]}")
+            log.info(f"Client disconnected: {addr[0]}:{addr[1]}")
 
     def _start_http_server(self):
         # import ssl
 
         if self._http_server_thread:
             print("HTTP server already running")
+            log.info("HTTP server already running")
             return
 
         from core.utils import resource_path
@@ -148,7 +171,9 @@ class BroadcastWorker:
                 super().__init__(*args, directory=directory, **kwargs)
 
         def _serve():
-            httpd = ThreadingHTTPServer(("0.0.0.0", 5173), DirHandler)
+            httpd = ThreadingHTTPServer(
+                ("0.0.0.0", self._state.broadcast_settings.webclient_port), DirHandler
+            )
 
             # Wrap con SSL
             # cert_file, key_file = generate_self_signed_cert()
@@ -156,7 +181,12 @@ class BroadcastWorker:
             # ctx.load_cert_chain(cert_file, key_file)
             # httpd.socket = ctx.wrap_socket(httpd.socket, server_side=True)
 
-            print("[BroadcastWorker] Web client at http://0.0.0.0:5173")
+            print(
+                f"[BroadcastWorker] Web client at http://0.0.0.0:{self._state.broadcast_settings.webclient_port}"
+            )
+            log.info(
+                f"Web client at http://0.0.0.0:{self._state.broadcast_settings.webclient_port}"
+            )
             httpd.serve_forever()
 
         self._http_server_thread = threading.Thread(

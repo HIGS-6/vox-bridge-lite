@@ -1,5 +1,6 @@
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
+from PySide6.QtCore import QSize, Qt
+from PySide6.QtGui import QFont, QIcon, QPainter, QPixmap
+from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -7,13 +8,28 @@ from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
+    QLayout,
     QPushButton,
+    QSizePolicy,
     QSpinBox,
     QVBoxLayout,
     QWidget,
 )
 
-from core.services.audio_worker import get_available_devices, list_input_devices
+from core.services.audio.utils import list_input_devices, list_output_devices
+from core.utils import resource_path
+
+
+def colored_icon(path: str, color: str = "#fff", size: int = 24) -> QIcon:
+    with open(resource_path(path), "r") as f:
+        svg = f.read().replace('stroke="currentColor"', f'stroke="{color}"')
+    renderer = QSvgRenderer(svg.encode())
+    pixmap = QPixmap(QSize(size, size))
+    pixmap.fill(Qt.GlobalColor.transparent)
+    painter = QPainter(pixmap)
+    renderer.render(painter)
+    painter.end()
+    return QIcon(pixmap)
 
 
 def make_section(title: str) -> QLabel:
@@ -44,6 +60,33 @@ def make_row(label: str, hint: str, widget: QWidget) -> QFrame:
     layout.addStretch()
     layout.addWidget(widget, alignment=Qt.AlignmentFlag.AlignVCenter)
     return row
+
+
+def make_col(label: str, hint: str, widget: QWidget | QLayout) -> QFrame:
+    frame = QFrame()
+    frame.setFrameShape(QFrame.Shape.StyledPanel)
+    layout = QVBoxLayout(frame)
+    layout.setContentsMargins(16, 12, 16, 12)
+    layout.setSpacing(0)
+
+    lbl = QLabel(label)
+    lbl.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
+
+    hint_lbl = QLabel(hint)
+    hint_lbl.setFont(QFont("Segoe UI", 9))
+    hint_lbl.setStyleSheet("color: #4a5568;")
+
+    layout.addWidget(lbl)
+    layout.addWidget(hint_lbl)
+    layout.addSpacing(10)
+
+    if isinstance(widget, QWidget):
+        widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        layout.addWidget(widget)
+    elif isinstance(widget, QLayout):
+        layout.addLayout(widget)
+
+    return frame
 
 
 def make_spinbox(lo: int, hi: int, on_change) -> QSpinBox:
@@ -89,21 +132,20 @@ def block(widgets: list, fn):
         w.blockSignals(False)
 
 
-def build_combo_widget(title, placeholder, on_select, on_refresh):
+def build_combo_widget(placeholder, on_select, on_refresh):
     row = QHBoxLayout()
     row.setSpacing(10)
     row.setContentsMargins(0, 0, 0, 0)
-
-    label = QLabel(title)
 
     combo = QComboBox()
     combo.setPlaceholderText(placeholder)
     combo.setCurrentIndex(-1)
 
     refresh_options_btn = QPushButton("Refresh")
+    refresh_options_btn.setIcon(colored_icon("assets/icons/refresh.svg", "#3d6ea8"))
+    refresh_options_btn.setProperty("class", "primary")
 
     # Add widgets
-    row.addWidget(label)
     row.addWidget(combo, 1)
     row.addWidget(refresh_options_btn)
 
@@ -122,10 +164,5 @@ def fill_input_devices_combo(combo: QComboBox):
 
 def fill_output_devices_combo(combo: QComboBox):
     combo.clear()
-    output_devices = get_available_devices()
-
-    if type(output_devices) is dict:
-        combo.addItem(output_devices["name"])
-    else:
-        for d in output_devices:
-            combo.addItem(d["name"])
+    for index, name in list_output_devices():
+        combo.addItem(name, index)
