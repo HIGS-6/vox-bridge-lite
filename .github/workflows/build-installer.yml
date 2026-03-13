@@ -23,7 +23,7 @@ jobs:
 
       - name: Build app
         run: |
-          pyinstaller main.py --noconsole --icon=assets/images/vox_bridge_logo.png --noconfirm --onedir --add-data "assets/:assets/"
+          pyinstaller main.py --noconsole --icon=assets/icons/vox_bridge_icon.ico --noconfirm --onedir --add-data "assets/:assets/"
 
       - name: Install Inno Setup
         run: choco install innosetup -y
