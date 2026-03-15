@@ -141,7 +141,7 @@ def build_combo_widget(placeholder, on_select, on_refresh):
     combo.setPlaceholderText(placeholder)
     combo.setCurrentIndex(-1)
 
-    refresh_options_btn = QPushButton("Refresh")
+    refresh_options_btn = QPushButton("  Refresh")
     refresh_options_btn.setIcon(colored_icon("assets/icons/refresh.svg", "#3d6ea8"))
     refresh_options_btn.setProperty("class", "primary")
 

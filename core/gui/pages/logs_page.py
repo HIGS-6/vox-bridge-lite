@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.app_state import AppState
+from core.gui.widgets.utils import colored_icon
 from core.services.logger_worker import LogHandler
 
 
@@ -41,7 +42,8 @@ class LogsPage(QWidget):
         title.setProperty("class", "title")
         title_row.addWidget(title)
         title_row.addStretch()
-        btn_clear = QPushButton("Limpiar")
+        btn_clear = QPushButton("  Clear")
+        btn_clear.setIcon(colored_icon("assets/icons/circle_x.svg"))
         btn_clear.clicked.connect(self._clear)
         title_row.addWidget(btn_clear)
         root.addLayout(title_row)

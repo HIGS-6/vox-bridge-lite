@@ -60,7 +60,7 @@ class BroadcastPage(QWidget):
         controls_layout.setContentsMargins(24, 16, 24, 16)
         controls_layout.setSpacing(12)
 
-        self.start_btn = QPushButton("    Start Translator Audio")
+        self.start_btn = QPushButton("    Start Broadcast")
         self.start_btn.setIcon(colored_icon("assets/icons/start.svg", "#6fa3d8"))
         self.start_btn.setProperty("class", "primary")
         self.start_btn.setSizePolicy(
@@ -68,7 +68,7 @@ class BroadcastPage(QWidget):
         )
         self.start_btn.clicked.connect(lambda: self._on_start_stop_pressed(True))
 
-        self.stop_btn = QPushButton("    Stop Translator Audio")
+        self.stop_btn = QPushButton("    Stop Broadcast")
         self.stop_btn.setIcon(colored_icon("assets/icons/stop.svg", "#d06860"))
         self.stop_btn.setProperty("class", "danger")
         self.stop_btn.setSizePolicy(
